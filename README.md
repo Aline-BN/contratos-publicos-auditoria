@@ -1,5 +1,3 @@
-# contratos-publicos-auditoria
-
 ## Sistema de Controle de Contratos Públicos com Registro de Ocorrências
 
 Este projeto é uma aplicação desktop desenvolvida em Python, utilizando Tkinter para a interface gráfica e SQLite como banco de dados.  
