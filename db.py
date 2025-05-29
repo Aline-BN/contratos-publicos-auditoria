@@ -1,26 +1,34 @@
-
 import sqlite3
 
-# Conexão global
 conexao = sqlite3.connect("contratos.db")
 cursor = conexao.cursor()
 
 # Criação das tabelas
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS contratos(
+CREATE TABLE IF NOT EXISTS fiscais (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    numero TEXT NOT NULL UNIQUE,
+    nome TEXT NOT NULL,
+    matricula TEXT NOT NULL
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS contratos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero TEXT NOT NULL,
     empresa TEXT NOT NULL,
     objeto TEXT NOT NULL,
     valor REAL NOT NULL,
     inicio TEXT NOT NULL,
     fim TEXT NOT NULL,
-    status TEXT NOT NULL
+    status TEXT NOT NULL,
+    fiscal_id INTEGER,
+    FOREIGN KEY (fiscal_id) REFERENCES fiscais(id)
 )
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS ocorrencias(
+CREATE TABLE IF NOT EXISTS ocorrencias (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     contrato_id INTEGER NOT NULL,
     data TEXT NOT NULL,
@@ -32,30 +40,51 @@ CREATE TABLE IF NOT EXISTS ocorrencias(
 
 conexao.commit()
 
-# Inserir contrato
-def inserir_contrato(numero, empresa, objeto, valor, inicio, fim, status):
-    cursor.execute("""
-    INSERT INTO contratos (numero, empresa, objeto, valor, inicio, fim, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (numero, empresa, objeto, valor, inicio, fim, status))
+# Funções CRUD
+def inserir_fiscal(nome, matricula):
+    cursor.execute("INSERT INTO fiscais (nome, matricula) VALUES (?, ?)", (nome, matricula))
     conexao.commit()
 
-# Listar contratos
-def listar_contratos():
-    cursor.execute("SELECT * FROM contratos")
+def listar_fiscais():
+    cursor.execute("SELECT * FROM fiscais")
     return cursor.fetchall()
 
-# Excluir contrato
+def excluir_fiscal(id_fiscal):
+    cursor.execute("DELETE FROM fiscais WHERE id = ?", (id_fiscal,))
+    conexao.commit()
+    return cursor.rowcount
+
+def inserir_contrato(numero, empresa, objeto, valor, inicio, fim, status, fiscal_id):
+    cursor.execute("""
+        INSERT INTO contratos (numero, empresa, objeto, valor, inicio, fim, status, fiscal_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (numero, empresa, objeto, valor, inicio, fim, status, fiscal_id))
+    conexao.commit()
+
+def listar_contratos():
+    cursor.execute("""
+        SELECT contratos.id, contratos.numero, contratos.empresa,
+               contratos.objeto, contratos.valor, contratos.inicio,
+               contratos.fim, contratos.status, contratos.fiscal_id,
+               fiscais.nome
+        FROM contratos
+        LEFT JOIN fiscais ON contratos.fiscal_id = fiscais.id
+    """)
+    return cursor.fetchall()
+
 def excluir_contrato(id_contrato):
     cursor.execute("DELETE FROM contratos WHERE id = ?", (id_contrato,))
     conexao.commit()
     return cursor.rowcount
 
-# Fechar conexão
-def fechar_conexao():
-    conexao.close()
-    
-# Inserir ocorrência
+def editar_contrato(id_contrato, empresa, objeto, valor, inicio, fim, status, fiscal_id):
+    cursor.execute("""
+        UPDATE contratos
+        SET empresa = ?, objeto = ?, valor = ?, inicio = ?, fim = ?, status = ?, fiscal_id = ?
+        WHERE id = ?
+    """, (empresa, objeto, valor, inicio, fim, status, fiscal_id, id_contrato))
+    conexao.commit()
+
 def inserir_ocorrencia(contrato_id, data, tipo, descricao):
     cursor.execute("""
         INSERT INTO ocorrencias (contrato_id, data, tipo, descricao)
@@ -63,17 +92,15 @@ def inserir_ocorrencia(contrato_id, data, tipo, descricao):
     """, (contrato_id, data, tipo, descricao))
     conexao.commit()
 
-# Listar ocorrências de um contrato
-def listar_ocorrencias_por_contrato(contrato_id):
-    cursor.execute("""
-        SELECT id, data, tipo, descricao
-        FROM ocorrencias
-        WHERE contrato_id = ?
-    """, (contrato_id,))
+def listar_ocorrencias(contrato_id):
+    cursor.execute("SELECT * FROM ocorrencias WHERE contrato_id = ?", (contrato_id,))
     return cursor.fetchall()
 
-# Excluir ocorrência
 def excluir_ocorrencia(id_ocorrencia):
     cursor.execute("DELETE FROM ocorrencias WHERE id = ?", (id_ocorrencia,))
     conexao.commit()
     return cursor.rowcount
+
+def fechar_conexao():
+    conexao.close()
+
