@@ -53,6 +53,8 @@ How to Run
 
    python main.py
 
+Note: this project was originally developed in Portuguese for academic purposes.
+
 
 Author
 
