@@ -1,104 +1,71 @@
 import tkinter as tk
 from tkinter import messagebox
-import sqlite3
-import os
+import db
 
-import sqlite3
-import db  # nome do módulo do banco
-import ocorrencias 
+def janela_fiscais():
+    janela = tk.Toplevel()
+    janela.title("Gerenciar Fiscais")
+    janela.geometry("700x400")
 
-def iniciar_interface():
-    root = tk.Tk()
-    root.title("Sistema de Contratos")
-    root.geometry("600x600")
+    frame_campos = tk.Frame(janela)
+    frame_campos.grid(row=0, column=0, padx=20, pady=10, sticky="nw")
 
-    # Funções internas
+    frame_botoes = tk.Frame(janela)
+    frame_botoes.grid(row=0, column=1, padx=10, pady=10, sticky="n")
+
+    # Campos
+    tk.Label(frame_campos, text="Nome do Fiscal:").grid(row=0, column=0, sticky="w", pady=2)
+    entry_nome = tk.Entry(frame_campos, width=40)
+    entry_nome.grid(row=0, column=1, pady=2)
+
+    tk.Label(frame_campos, text="Matrícula:").grid(row=1, column=0, sticky="w", pady=2)
+    entry_matricula = tk.Entry(frame_campos, width=40)
+    entry_matricula.grid(row=1, column=1, pady=2)
+
+    tk.Label(frame_campos, text="ID para excluir:").grid(row=2, column=0, sticky="w", pady=2)
+    entry_id = tk.Entry(frame_campos, width=20)
+    entry_id.grid(row=2, column=1, sticky="w", pady=2)
+
+    # Listbox com rolagem
+    tk.Label(frame_campos, text="Lista de Fiscais:").grid(row=3, column=0, columnspan=2, pady=(10, 0), sticky="w")
+    scrollbar = tk.Scrollbar(frame_campos)
+    scrollbar.grid(row=4, column=2, sticky='ns')
+    listbox = tk.Listbox(frame_campos, width=60, height=10, yscrollcommand=scrollbar.set)
+    listbox.grid(row=4, column=0, columnspan=2, pady=5)
+    scrollbar.config(command=listbox.yview)
+
     def inserir():
-        numero = entry_numero.get()
-        empresa = entry_empresa.get()
-        objeto = entry_objeto.get()
-        valor = entry_valor.get()
-        inicio = entry_inicio.get()
-        fim = entry_fim.get()
-        status = entry_status.get()
-
-        if not all([numero, empresa, objeto, valor, inicio, fim, status]):
-            messagebox.showwarning("Atenção", "Preencha todos os campos!")
+        nome = entry_nome.get()
+        matricula = entry_matricula.get()
+        if nome == "" or matricula == "":
+            messagebox.showwarning("Atenção", "Preencha todos os campos.")
             return
-
-        try:
-            valor_float = float(valor)
-            db.inserir_contrato(numero, empresa, objeto, valor_float, inicio, fim, status)
-            messagebox.showinfo("Sucesso", f"Contrato {numero} inserido!")
-            for entry in [entry_numero, entry_empresa, entry_objeto, entry_valor, entry_inicio, entry_fim, entry_status]:
-                entry.delete(0, tk.END)
-        except ValueError:
-            messagebox.showerror("Erro", "Valor deve ser um número válido")
+        db.inserir_fiscal(nome, matricula)
         listar()
+        entry_nome.delete(0, tk.END)
+        entry_matricula.delete(0, tk.END)
+
+    def excluir():
+        try:
+            id_fiscal = int(entry_id.get())
+            linhas = db.excluir_fiscal(id_fiscal)
+            if linhas == 0:
+                messagebox.showinfo("Info", "Nenhum fiscal encontrado.")
+            else:
+                messagebox.showinfo("Sucesso", "Fiscal excluído.")
+            listar()
+        except ValueError:
+            messagebox.showwarning("Atenção", "Informe um ID válido.")
 
     def listar():
         listbox.delete(0, tk.END)
-        contratos = db.listar_contratos()
-        for c in contratos:
-            listbox.insert(tk.END, f"ID: {c[0]} | Nº: {c[1]} | Empresa: {c[2]} | Valor: R$ {c[4]:.2f}")
+        fiscais = db.listar_fiscais()
+        for f in fiscais:
+            listbox.insert(tk.END, f"ID: {f[0]} | Nome: {f[1]} | Matrícula: {f[2]}")
 
-    def excluir():
-        id_contrato = entry_id.get()
-        if id_contrato == "":
-            messagebox.showwarning("Atenção", "Informe o ID para excluir!")
-            return
-        linhas_excluidas = db.excluir_contrato(id_contrato)
-        if linhas_excluidas == 0:
-            messagebox.showinfo("Info", "Nenhum contrato com esse ID.")
-        else:
-            messagebox.showinfo("Sucesso", f"Contrato com ID {id_contrato} excluído")
-        entry_id.delete(0, tk.END)
-        listar()
-
-    # Widgets de entrada
-    tk.Label(root, text="Número do Contrato:").pack()
-    entry_numero = tk.Entry(root)
-    entry_numero.pack()
-
-    tk.Label(root, text="Empresa:").pack()
-    entry_empresa = tk.Entry(root)
-    entry_empresa.pack()
-
-    tk.Label(root, text="Objeto:").pack()
-    entry_objeto = tk.Entry(root)
-    entry_objeto.pack()
-
-    tk.Label(root, text="Valor (R$):").pack()
-    entry_valor = tk.Entry(root)
-    entry_valor.pack()
-
-    tk.Label(root, text="Data Início (YYYY-MM-DD):").pack()
-    entry_inicio = tk.Entry(root)
-    entry_inicio.pack()
-
-    tk.Label(root, text="Data Fim (YYYY-MM-DD):").pack()
-    entry_fim = tk.Entry(root)
-    entry_fim.pack()
-
-    tk.Label(root, text="Status:").pack()
-    entry_status = tk.Entry(root)
-    entry_status.pack()
-
-    tk.Button(root, text="Inserir Contrato", command=inserir).pack(pady=10)
-
-    # Lista de contratos
-    tk.Label(root, text="Contratos Cadastrados:").pack()
-    listbox = tk.Listbox(root, width=80)
-    listbox.pack(pady=5)
-
-    # Exclusão
-    tk.Label(root, text="ID do Contrato para excluir:").pack()
-    entry_id = tk.Entry(root)
-    entry_id.pack()
-
-    tk.Button(root, text="Excluir Contrato", command=excluir).pack(pady=10)
-
-    tk.Button(root, text="Gerenciar Ocorrências", command=ocorrencias.janela_ocorrencias).pack(pady=10)
+    # Botões
+    tk.Button(frame_botoes, text="Inserir Fiscal", command=inserir, width=20).pack(pady=5)
+    tk.Button(frame_botoes, text="Excluir Fiscal", command=excluir, width=20).pack(pady=5)
+    tk.Button(frame_botoes, text="Listar Fiscais", command=listar, width=20).pack(pady=5)
 
     listar()
-    root.mainloop()
