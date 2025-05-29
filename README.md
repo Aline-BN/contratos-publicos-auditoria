@@ -1,67 +1,63 @@
-## Sistema de Controle de Contratos Públicos com Registro de Ocorrências
+Public Contracts Management System
 
-Este projeto é uma aplicação desktop desenvolvida em Python, utilizando Tkinter para a interface gráfica e SQLite como banco de dados.  
-Seu foco principal é facilitar o gerenciamento de contratos administrativos e o registro de ocorrências contratuais — como glosas, multas, advertências e atrasos — de forma simples, direta e organizada.
+A desktop application developed in Python using the Tkinter graphical interface and a SQLite database. The system enables the management of administrative contracts, logging of contract-related occurrences, and tracking of responsible inspectors.
 
-### Com ele, é possível:
+Description
 
-- Cadastrar, visualizar e excluir contratos com facilidade;
-- Registrar e acompanhar ocorrências associadas a cada contrato;
-- Navegar por uma interface gráfica prática e funcional;
-- Armazenar e relacionar dados com segurança, utilizando chave estrangeira.
+This system was created to simplify the oversight and organization of public contracts. Users can register contracts with detailed information, associate occurrences with those contracts, and link them to inspectors, using a relational database with enforced foreign key constraints.
 
----
+Features
 
-## Tecnologias Utilizadas
+Contracts Module
+- Register contracts with number, company, description, value, start and end dates, status, and assigned inspector.
+- List all registered contracts with a simplified view.
+- Edit contracts by ID.
+- Delete contracts by ID.
+
+Occurrences Module
+- Register occurrences linked to specific contracts.
+- Store type, date, and description of each occurrence.
+- List and delete occurrences by contract.
+
+Inspectors Module
+- Register inspectors with name and ID.
+- List all registered inspectors.
+- Delete inspectors by ID.
+
+Database
+
+The database is created automatically upon the first execution of the system.
+
+Technologies Used
 
 - Python 3
-- Tkinter (Interface Gráfica)
-- SQLite3 (Banco de Dados)
+- Tkinter (GUI)
+- SQLite3 (database)
 
----
-
-## Funcionalidades
-
-### Módulo de Contratos
-
-- Cadastro de novos contratos (número, empresa, valor, vigência e status);
-- Listagem de todos os contratos registrados;
-- Exclusão de contratos por ID.
-
-### Módulo de Ocorrências
-
-- Janela dedicada para gerenciamento de ocorrências;
-- Seleção de contrato por número ou nome da empresa;
-- Registro detalhado de ocorrências (data, tipo e descrição);
-- Visualização de todas as ocorrências relacionadas a um contrato;
-- Exclusão de ocorrências por ID.
-
----
-
-## Estrutura de Arquivos
+File Structure
 
 sistema-contratos/
-├── db.py # Funções e criação do banco SQLite
-├── interface.py # Tela principal para contratos
-├── ocorrencias.py # Janela de ocorrências vinculadas a contratos
-├── main.py # Ponto de entrada do sistema
-├── contratos.db # Banco de dados gerado automaticamente
-└── README.md # Este arquivo
+│
+├── db.py                  - Database structure and functions
+├── interface.py           - Main interface for contract management
+├── ocorrencias.py         - Interface for occurrences management
+├── interface_fiscais.py   - Interface for inspectors management
+├── main.py                - Application entry point
+└── README.txt             - Project instructions and details
 
-## Como Executar
+How to Run
 
-1. Certifique-se de ter o Python 3 instalado.
-2. Clone o repositório ou baixe os arquivos `.py`.
-3. No terminal, execute:
+1. Make sure Python 3 is installed.
+2. Download or clone this repository.
+3. Open a terminal and run:
 
-python main.py
-
-Autora
-Desenvolvido por Aline Nascimento – Estudante de Ciência da Computação e Servidora Pública.
+   python main.py
 
 
-Contato
-LinkedIn: www.linkedin.com/in/alinebornascimento
+Author
 
-Email: aline.b.nascimento@sempreceub.com
+Developed by Aline Nascimento  
+Computer Science student - CEUB | Public Sector Professional  
+Contact: aline.b.nascimento@sempreceub.com
+
 
