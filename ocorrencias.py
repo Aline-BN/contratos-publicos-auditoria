@@ -1,85 +1,82 @@
-
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox
 import db
 
 def janela_ocorrencias():
     janela = tk.Toplevel()
     janela.title("Gerenciar Ocorrências")
-    janela.geometry("700x600")
+    janela.geometry("1000x500")
 
-    contratos = db.listar_contratos()
-    contratos_dict = {f"{c[1]} - {c[2]}": c[0] for c in contratos}
+    frame_campos = tk.Frame(janela)
+    frame_campos.grid(row=0, column=0, padx=20, pady=10, sticky="nw")
 
-    # Widgets para seleção do contrato
-    tk.Label(janela, text="Selecione um Contrato:").pack(pady=5)
-    contrato_var = tk.StringVar()
-    contrato_menu = ttk.Combobox(janela, textvariable=contrato_var, values=list(contratos_dict.keys()), state='readonly', width=60)
-    contrato_menu.pack(pady=5)
+    frame_botoes = tk.Frame(janela)
+    frame_botoes.grid(row=0, column=1, padx=10, pady=10, sticky="n")
 
-    # Campos de ocorrência
-    tk.Label(janela, text="Data (YYYY-MM-DD):").pack()
-    entry_data = tk.Entry(janela)
-    entry_data.pack()
+    
+    campos = [
+        ("ID do Contrato:", "entry_id_contrato"),
+        ("Data (AAAA-MM-DD):", "entry_data"),
+        ("Tipo:", "entry_tipo"),
+        ("Descrição:", "entry_descricao"),
+        ("ID para excluir:", "entry_id_excluir")
+    ]
+    entradas = {}
 
-    tk.Label(janela, text="Tipo (glosa, multa, etc.):").pack()
-    entry_tipo = tk.Entry(janela)
-    entry_tipo.pack()
-
-    tk.Label(janela, text="Descrição:").pack()
-    entry_desc = tk.Entry(janela, width=60)
-    entry_desc.pack()
-
-    def inserir_ocorrencia():
-        contrato_selecionado = contrato_var.get()
-        if not contrato_selecionado:
-            messagebox.showwarning("Atenção", "Selecione um contrato.")
-            return
-
-        contrato_id = contratos_dict[contrato_selecionado]
-        data = entry_data.get()
-        tipo = entry_tipo.get()
-        descricao = entry_desc.get()
-
-        if not all([data, tipo, descricao]):
-            messagebox.showwarning("Atenção", "Preencha todos os campos.")
-            return
-
-        db.inserir_ocorrencia(contrato_id, data, tipo, descricao)
-        messagebox.showinfo("Sucesso", "Ocorrência registrada.")
-        entry_data.delete(0, tk.END)
-        entry_tipo.delete(0, tk.END)
-        entry_desc.delete(0, tk.END)
-        listar_ocorrencias()
-
-    tk.Button(janela, text="Registrar Ocorrência", command=inserir_ocorrencia).pack(pady=10)
-
-    # Lista de ocorrências
-    tk.Label(janela, text="Ocorrências registradas:").pack()
-    listbox = tk.Listbox(janela, width=100)
-    listbox.pack(pady=10)
-
-    def listar_ocorrencias():
-        listbox.delete(0, tk.END)
-        contrato_selecionado = contrato_var.get()
-        if contrato_selecionado:
-            contrato_id = contratos_dict[contrato_selecionado]
-            ocorrencias = db.listar_ocorrencias_por_contrato(contrato_id)
-            for o in ocorrencias:
-                listbox.insert(tk.END, f"ID: {o[0]} | {o[1]} | {o[2]} | {o[3]}")
-
-    def excluir_ocorrencia():
-        selecao = listbox.curselection()
-        if not selecao:
-            messagebox.showwarning("Atenção", "Selecione uma ocorrência na lista.")
-            return
-        linha = listbox.get(selecao[0])
-        id_ocorrencia = linha.split('|')[0].replace("ID:", "").strip()
-        if db.excluir_ocorrencia(id_ocorrencia):
-            messagebox.showinfo("Sucesso", f"Ocorrência {id_ocorrencia} excluída.")
+    for i, (label, var) in enumerate(campos):
+        tk.Label(frame_campos, text=label).grid(row=i, column=0, sticky="w", pady=2)
+        if "descricao" in var:
+            entradas[var] = tk.Text(frame_campos, height=4, width=50)
+            entradas[var].grid(row=i, column=1, pady=2)
         else:
-            messagebox.showwarning("Erro", "Ocorrência não encontrada.")
-        listar_ocorrencias()
+            entradas[var] = tk.Entry(frame_campos, width=50)
+            entradas[var].grid(row=i, column=1, pady=2)
 
-    tk.Button(janela, text="Excluir Ocorrência Selecionada", command=excluir_ocorrencia).pack(pady=5)
-    contrato_menu.bind("<<ComboboxSelected>>", lambda e: listar_ocorrencias())
+    # Listbox com scrollbar
+    tk.Label(frame_campos, text="Lista de Ocorrências:").grid(row=len(campos), column=0, columnspan=2, pady=(10, 0), sticky="w")
+    scrollbar = tk.Scrollbar(frame_campos)
+    scrollbar.grid(row=len(campos)+1, column=2, sticky='ns')
+    listbox = tk.Listbox(frame_campos, width=80, height=10, yscrollcommand=scrollbar.set)
+    listbox.grid(row=len(campos)+1, column=0, columnspan=2, pady=5)
+    scrollbar.config(command=listbox.yview)
+
+    def inserir():
+        try:
+            contrato_id = int(entradas["entry_id_contrato"].get())
+            data = entradas["entry_data"].get()
+            tipo = entradas["entry_tipo"].get()
+            descricao = entradas["entry_descricao"].get("1.0", tk.END).strip()
+
+            db.inserir_ocorrencia(contrato_id, data, tipo, descricao)
+            listar()
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
+
+    def excluir():
+        try:
+            id_ocorrencia = int(entradas["entry_id_excluir"].get())
+            linhas = db.excluir_ocorrencia(id_ocorrencia)
+            if linhas == 0:
+                messagebox.showinfo("Info", "Nenhuma ocorrência encontrada.")
+            else:
+                messagebox.showinfo("Sucesso", "Ocorrência excluída.")
+            listar()
+        except ValueError:
+            messagebox.showwarning("Atenção", "Informe um ID válido.")
+
+    def listar():
+        try:
+            contrato_id = int(entradas["entry_id_contrato"].get())
+            ocorrencias = db.listar_ocorrencias(contrato_id)
+            listbox.delete(0, tk.END)
+            for o in ocorrencias:
+                listbox.insert(tk.END, f"ID: {o[0]} | Data: {o[2]} | Tipo: {o[3]} | Desc: {o[4]}")
+        except ValueError:
+            listbox.delete(0, tk.END)
+
+    # Botões
+    tk.Button(frame_botoes, text="Inserir Ocorrência", command=inserir, width=20).pack(pady=5)
+    tk.Button(frame_botoes, text="Excluir Ocorrência", command=excluir, width=20).pack(pady=5)
+    tk.Button(frame_botoes, text="Listar Ocorrências", command=listar, width=20).pack(pady=5)
+
+    listar()
